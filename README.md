@@ -1,6 +1,6 @@
 # zyml - YAML Parser for Zig
 
-A robust, YAML 1.2 compliant parser written in Zig for the rumb project.
+A robust, YAML 1.2 compliant parser written in Zig.
 
 ## Features
 
