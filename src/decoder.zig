@@ -18,12 +18,10 @@ pub const Decoder = struct {
     }
 
     pub fn decode(self: *Decoder, comptime T: type, reader: anytype) !T {
-        var content = std.ArrayList(u8).init(self.allocator);
-        defer content.deinit();
+        const content = try reader.readAllAlloc(self.allocator, std.math.maxInt(usize));
+        defer self.allocator.free(content);
 
-        try reader.readAllArrayList(&content, std.math.maxInt(usize));
-
-        return try self.decodeFromSlice(T, content.items);
+        return try self.decodeFromSlice(T, content);
     }
 
     pub fn decodeFromSlice(self: *Decoder, comptime T: type, source: []const u8) !T {
@@ -39,17 +37,17 @@ pub const Decoder = struct {
         const file = try std.fs.cwd().openFile(path, .{});
         defer file.close();
 
-        var buf: [4096]u8 = undefined;
-        return try self.decode(T, file.reader(&buf));
+        const content = try file.readToEndAlloc(self.allocator, std.math.maxInt(usize));
+        defer self.allocator.free(content);
+
+        return try self.decodeFromSlice(T, content);
     }
 
     pub fn decodeAll(self: *Decoder, comptime T: type, reader: anytype) ![]T {
-        var content = std.ArrayList(u8).init(self.allocator);
-        defer content.deinit();
+        const content = try reader.readAllAlloc(self.allocator, std.math.maxInt(usize));
+        defer self.allocator.free(content);
 
-        try reader.readAllArrayList(&content, std.math.maxInt(usize));
-
-        return try self.decodeAllFromSlice(T, content.items);
+        return try self.decodeAllFromSlice(T, content);
     }
 
     pub fn decodeAllFromSlice(self: *Decoder, comptime T: type, source: []const u8) ![]T {

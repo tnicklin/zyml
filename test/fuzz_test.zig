@@ -1,6 +1,7 @@
 const std = @import("std");
-const Parser = @import("parser.zig");
-const Yaml = @import("yaml.zig");
+const zyml = @import("zyml");
+const Parser = zyml.Parser;
+const Yaml = zyml.Yaml;
 
 /// Fuzz test entry point for LibFuzzer or AFL
 /// This function is called repeatedly with different random inputs
