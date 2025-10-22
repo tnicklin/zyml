@@ -32,6 +32,28 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
+    const struct_marshal_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("test/struct_marshal_test.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zyml", .module = mod },
+            },
+        }),
+    });
+
+    const go_style_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("test/go_style_test.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zyml", .module = mod },
+            },
+        }),
+    });
+
     const main_tests = b.addTest(.{
         .root_module = b.createModule(.{
             .root_source_file = b.path("test/test-zyml.zig"),
@@ -59,6 +81,8 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run all tests");
     test_step.dependOn(&b.addRunArtifact(decoder_tests).step);
     test_step.dependOn(&b.addRunArtifact(fuzz_tests).step);
+    test_step.dependOn(&b.addRunArtifact(struct_marshal_tests).step);
+    test_step.dependOn(&b.addRunArtifact(go_style_tests).step);
     test_step.dependOn(&b.addRunArtifact(main_tests).step);
 
     for (spec_tests) |test_file| {
@@ -80,6 +104,12 @@ pub fn build(b: *std.Build) void {
 
     const fuzz_test_step = b.step("test-fuzz", "Run fuzz tests");
     fuzz_test_step.dependOn(&b.addRunArtifact(fuzz_tests).step);
+
+    const struct_marshal_test_step = b.step("test-struct-marshal", "Run struct marshal tests");
+    struct_marshal_test_step.dependOn(&b.addRunArtifact(struct_marshal_tests).step);
+
+    const go_style_test_step = b.step("test-go-style", "Run Go-style zero value tests");
+    go_style_test_step.dependOn(&b.addRunArtifact(go_style_tests).step);
 
     const spec_test_step = b.step("test-spec", "Run spec tests");
     spec_test_step.dependOn(&b.addRunArtifact(main_tests).step);

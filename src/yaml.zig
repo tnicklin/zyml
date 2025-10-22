@@ -158,8 +158,16 @@ fn parseStruct(self: Yaml, arena: Allocator, comptime T: type, map: Map) Error!T
             continue;
         }
 
-        const unwrapped = value orelse return error.StructFieldMissing;
-        @field(parsed, field.name) = try self.parseValue(arena, field.type, unwrapped);
+        if (value) |unwrapped| {
+            @field(parsed, field.name) = try self.parseValue(arena, field.type, unwrapped);
+        } else {
+            if (field.default_value_ptr) |default_ptr| {
+                const default_value: *const field.type = @ptrCast(@alignCast(default_ptr));
+                @field(parsed, field.name) = default_value.*;
+            } else {
+                @field(parsed, field.name) = std.mem.zeroes(field.type);
+            }
+        }
     }
 
     return parsed;
