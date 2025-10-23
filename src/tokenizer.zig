@@ -144,7 +144,6 @@ pub fn next(self: *Tokenizer) Token {
                     break;
                 } else if (self.matchesPattern("-\n")) {
                     result.id = .seq_item_ind;
-                    // we do not skip the newline
                     self.index += "-".len;
                     break;
                 } else {
@@ -221,9 +220,6 @@ pub fn next(self: *Tokenizer) Token {
                     result.id = .literal_block;
                     self.index += 1;
 
-                    // Consume chomping indicators (-,+) and indentation digits (1-9)
-                    // The parser will read these back from source, but we need to consume
-                    // them in the tokenizer so they don't get tokenized as separate tokens
                     while (self.index < self.buffer.len) {
                         const ch = self.buffer[self.index];
                         if (ch == '-' or ch == '+' or (ch >= '1' and ch <= '9')) {
@@ -238,7 +234,6 @@ pub fn next(self: *Tokenizer) Token {
                     result.id = .folded_block;
                     self.index += 1;
 
-                    // Consume chomping indicators (-,+) and indentation digits (1-9)
                     while (self.index < self.buffer.len) {
                         const ch = self.buffer[self.index];
                         if (ch == '-' or ch == '+' or (ch >= '1' and ch <= '9')) {
@@ -284,7 +279,7 @@ pub fn next(self: *Tokenizer) Token {
                     self.index += 1;
                     break;
                 },
-                else => {}, // TODO this should be an error condition
+                else => {},
             },
 
             .single_quoted => switch (c) {
@@ -300,24 +295,18 @@ pub fn next(self: *Tokenizer) Token {
 
             .double_quoted => switch (c) {
                 '"' => {
-                    // Check if this quote is escaped by looking at the previous character
                     const is_escaped = blk: {
                         if (self.index < result.loc.start + 1) break :blk false;
-                        // Count consecutive backslashes before the quote
                         var num_backslashes: usize = 0;
                         var check_idx = self.index;
                         while (check_idx > result.loc.start and self.buffer[check_idx - 1] == '\\') {
                             num_backslashes += 1;
                             check_idx -= 1;
                         }
-                        // Odd number of backslashes means the quote is escaped
                         break :blk (num_backslashes % 2) == 1;
                     };
 
-                    if (is_escaped) {
-                        // This quote is escaped, continue
-                    } else {
-                        // This quote ends the string
+                    if (is_escaped) {} else {
                         result.id = .double_quoted;
                         self.index += 1;
                         break;
@@ -349,7 +338,6 @@ pub fn next(self: *Tokenizer) Token {
             },
 
             .literal_block, .folded_block => {
-                // These tokens are emitted immediately and don't consume more input
                 unreachable;
             },
         }
@@ -369,331 +357,3 @@ pub fn next(self: *Tokenizer) Token {
     return result;
 }
 
-test "empty doc" {
-    try ensureExpected("", &[_]Token.Id{.eof});
-}
-
-test "empty doc with explicit markers" {
-    try ensureExpected(
-        \\---
-        \\...
-    , &[_]Token.Id{
-        .doc_start, .new_line, .doc_end, .eof,
-    });
-}
-
-test "empty doc with explicit markers and a directive" {
-    try ensureExpected(
-        \\--- !tbd-v1
-        \\...
-    , &[_]Token.Id{
-        .doc_start,
-        .space,
-        .tag,
-        .literal,
-        .new_line,
-        .doc_end,
-        .eof,
-    });
-}
-
-test "sequence of values" {
-    try ensureExpected(
-        \\- 0
-        \\- 1
-        \\- 2
-    , &[_]Token.Id{
-        .seq_item_ind,
-        .literal,
-        .new_line,
-        .seq_item_ind,
-        .literal,
-        .new_line,
-        .seq_item_ind,
-        .literal,
-        .eof,
-    });
-}
-
-test "sequence of sequences" {
-    try ensureExpected(
-        \\- [ val1, val2]
-        \\- [val3, val4 ]
-    , &[_]Token.Id{
-        .seq_item_ind,
-        .flow_seq_start,
-        .space,
-        .literal,
-        .comma,
-        .space,
-        .literal,
-        .flow_seq_end,
-        .new_line,
-        .seq_item_ind,
-        .flow_seq_start,
-        .literal,
-        .comma,
-        .space,
-        .literal,
-        .space,
-        .flow_seq_end,
-        .eof,
-    });
-}
-
-test "mappings" {
-    try ensureExpected(
-        \\key1: value1
-        \\key2: value2
-    , &[_]Token.Id{
-        .literal,
-        .map_value_ind,
-        .space,
-        .literal,
-        .new_line,
-        .literal,
-        .map_value_ind,
-        .space,
-        .literal,
-        .eof,
-    });
-}
-
-test "inline mapped sequence of values" {
-    try ensureExpected(
-        \\key :  [ val1, 
-        \\          val2 ]
-    , &[_]Token.Id{
-        .literal,
-        .space,
-        .map_value_ind,
-        .space,
-        .flow_seq_start,
-        .space,
-        .literal,
-        .comma,
-        .space,
-        .new_line,
-        .space,
-        .literal,
-        .space,
-        .flow_seq_end,
-        .eof,
-    });
-}
-
-test "part of tbd" {
-    try ensureExpected(
-        \\--- !tapi-tbd
-        \\tbd-version:     4
-        \\targets:         [ x86_64-macos ]
-        \\
-        \\uuids:
-        \\  - target:          x86_64-macos
-        \\    value:           F86CC732-D5E4-30B5-AA7D-167DF5EC2708
-        \\
-        \\install-name:    '/usr/lib/libSystem.B.dylib'
-        \\...
-    , &[_]Token.Id{
-        .doc_start,
-        .space,
-        .tag,
-        .literal,
-        .new_line,
-        .literal,
-        .map_value_ind,
-        .space,
-        .literal,
-        .new_line,
-        .literal,
-        .map_value_ind,
-        .space,
-        .flow_seq_start,
-        .space,
-        .literal,
-        .space,
-        .flow_seq_end,
-        .new_line,
-        .new_line,
-        .literal,
-        .map_value_ind,
-        .new_line,
-        .space,
-        .seq_item_ind,
-        .literal,
-        .map_value_ind,
-        .space,
-        .literal,
-        .new_line,
-        .space,
-        .literal,
-        .map_value_ind,
-        .space,
-        .literal,
-        .new_line,
-        .new_line,
-        .literal,
-        .map_value_ind,
-        .space,
-        .single_quoted,
-        .new_line,
-        .doc_end,
-        .eof,
-    });
-}
-
-test "Unindented list" {
-    try ensureExpected(
-        \\b:
-        \\- foo: 1
-        \\c: 1
-    , &[_]Token.Id{
-        .literal,
-        .map_value_ind,
-        .new_line,
-        .seq_item_ind,
-        .literal,
-        .map_value_ind,
-        .space,
-        .literal,
-        .new_line,
-        .literal,
-        .map_value_ind,
-        .space,
-        .literal,
-        .eof,
-    });
-}
-
-test "escape sequences" {
-    try ensureExpected(
-        \\a: 'here''s an apostrophe'
-        \\b: "a newline\nand a\ttab"
-        \\c: "\"here\" and there"
-    , &[_]Token.Id{
-        .literal,
-        .map_value_ind,
-        .space,
-        .single_quoted,
-        .new_line,
-        .literal,
-        .map_value_ind,
-        .space,
-        .double_quoted,
-        .new_line,
-        .literal,
-        .map_value_ind,
-        .space,
-        .double_quoted,
-        .eof,
-    });
-}
-
-test "comments" {
-    try ensureExpected(
-        \\key: # some comment about the key
-        \\# first value
-        \\- val1
-        \\# second value
-        \\- val2
-    , &[_]Token.Id{
-        .literal,
-        .map_value_ind,
-        .space,
-        .comment,
-        .new_line,
-        .comment,
-        .new_line,
-        .seq_item_ind,
-        .literal,
-        .new_line,
-        .comment,
-        .new_line,
-        .seq_item_ind,
-        .literal,
-        .eof,
-    });
-}
-
-test "quoted literals" {
-    try ensureExpected(
-        \\'#000000'
-        \\'[000000'
-        \\"&someString"
-    , &[_]Token.Id{
-        .single_quoted,
-        .new_line,
-        .single_quoted,
-        .new_line,
-        .double_quoted,
-        .eof,
-    });
-}
-
-test "unquoted literals" {
-    try ensureExpected(
-        \\key1: helloWorld
-        \\key2: hello,world
-        \\key3: [hello,world]
-    , &[_]Token.Id{
-        // key1
-        .literal,
-        .map_value_ind,
-        .space,
-        .literal, // helloWorld
-        .new_line,
-        // key2
-        .literal,
-        .map_value_ind,
-        .space,
-        .literal, // hello,world
-        .new_line,
-        // key3
-        .literal,
-        .map_value_ind,
-        .space,
-        .flow_seq_start,
-        .literal, // hello
-        .comma,
-        .literal, // world
-        .flow_seq_end,
-        .eof,
-    });
-}
-
-test "unquoted literal containing colon" {
-    try ensureExpected(
-        \\key1: val:ue
-        \\key2: val::ue
-    , &[_]Token.Id{
-        // key1
-        .literal,
-        .map_value_ind,
-        .space,
-        .literal, // val:ue
-        .new_line,
-        // key2
-        .literal,
-        .map_value_ind,
-        .space,
-        .literal, // val::ue
-        .eof,
-    });
-}
-
-fn ensureExpected(source: []const u8, expected: []const Token.Id) !void {
-    var tokenizer = Tokenizer{
-        .buffer = source,
-    };
-
-    var given: std.ArrayListUnmanaged(Token.Id) = .empty;
-    defer given.deinit(std.testing.allocator);
-
-    while (true) {
-        const token = tokenizer.next();
-        try given.append(std.testing.allocator, token.id);
-        if (token.id == .eof) break;
-    }
-
-    try std.testing.expectEqualSlices(Token.Id, expected, given.items);
-}

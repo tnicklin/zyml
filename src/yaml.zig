@@ -136,7 +136,6 @@ fn parseUnion(self: Yaml, arena: Allocator, comptime T: type, value: Value) Erro
 fn parseOptional(self: Yaml, arena: Allocator, comptime T: type, value: ?Value) Error!T {
     const unwrapped = value orelse return null;
 
-    // Handle .empty (null) values
     if (unwrapped == .empty) return null;
 
     const opt_info = @typeInfo(T).optional;
@@ -546,7 +545,6 @@ pub const Value = union(enum) {
                     return Value{ .float = float };
                 }
 
-                // Check for null values
                 if (raw.len <= longestNullValueString) {
                     for (supportedNullValue) |v| {
                         if (std.mem.eql(u8, v, raw)) {
@@ -555,7 +553,6 @@ pub const Value = union(enum) {
                     }
                 }
 
-                // Check for boolean values
                 if (raw.len > 0 and raw.len <= longestBooleanValueString) {
                     var buffer: [longestBooleanValueString]u8 = undefined;
                     const lower_raw = std.ascii.lowerString(&buffer, raw);

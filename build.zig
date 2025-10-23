@@ -65,6 +65,28 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
+    const tokenizer_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("test/tokenizer_test.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zyml", .module = mod },
+            },
+        }),
+    });
+
+    const parser_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("test/parser_test.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zyml", .module = mod },
+            },
+        }),
+    });
+
     const main_tests = b.addTest(.{
         .root_module = b.createModule(.{
             .root_source_file = b.path("test/test-zyml.zig"),
@@ -95,6 +117,8 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&b.addRunArtifact(fuzz_tests).step);
     test_step.dependOn(&b.addRunArtifact(struct_marshal_tests).step);
     test_step.dependOn(&b.addRunArtifact(go_style_tests).step);
+    test_step.dependOn(&b.addRunArtifact(tokenizer_tests).step);
+    test_step.dependOn(&b.addRunArtifact(parser_tests).step);
     test_step.dependOn(&b.addRunArtifact(main_tests).step);
 
     for (spec_tests) |test_file| {
@@ -125,6 +149,12 @@ pub fn build(b: *std.Build) void {
 
     const go_style_test_step = b.step("test-go-style", "Run Go-style zero value tests");
     go_style_test_step.dependOn(&b.addRunArtifact(go_style_tests).step);
+
+    const tokenizer_test_step = b.step("test-tokenizer", "Run tokenizer tests");
+    tokenizer_test_step.dependOn(&b.addRunArtifact(tokenizer_tests).step);
+
+    const parser_test_step = b.step("test-parser", "Run parser tests");
+    parser_test_step.dependOn(&b.addRunArtifact(parser_tests).step);
 
     const spec_test_step = b.step("test-spec", "Run spec tests");
     spec_test_step.dependOn(&b.addRunArtifact(main_tests).step);

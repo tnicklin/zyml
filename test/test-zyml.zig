@@ -6,6 +6,9 @@ pub fn main() !void {
 }
 
 test {
+    _ = @import("tokenizer_test.zig");
+    _ = @import("parser_test.zig");
+
     _ = @import("spec_scalars_test.zig");
     _ = @import("spec_collections_test.zig");
     _ = @import("spec_flow_test.zig");

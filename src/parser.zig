@@ -252,15 +252,12 @@ fn map(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
 
         const key_pos = self.token_it.pos;
 
-        // Check if we can peek at the next token
         const next_tok = self.token_it.peek() orelse break;
 
-        // Check for end-of-document markers
         if (next_tok.id == .doc_start or next_tok.id == .doc_end or next_tok.id == .eof) {
             break;
         }
 
-        // Check indentation
         if (self.getCol(key_pos) < col) break;
 
         const key = self.token_it.next() orelse break;
@@ -419,15 +416,13 @@ fn mapBracketed(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
 
         _ = self.eatToken(.comma, &.{.comment});
 
-        // Check if we're at the end before trying to parse a key
         self.eatCommentsAndSpace(&.{.comment});
         if (self.token_it.peek()) |peek_tok| {
             if (peek_tok.id == .flow_map_end) {
-                continue; // Will be caught by the eatToken above on next iteration
+                continue;
             }
         }
 
-        // Parse key
         const key_start = self.token_it.pos;
         const key_tok = self.token_it.next() orelse return error.UnexpectedEof;
 
@@ -435,10 +430,8 @@ fn mapBracketed(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
             return self.fail(gpa, key_start, "expected key in flow mapping", .{});
         }
 
-        // Expect colon
         _ = try self.expectToken(.map_value_ind, &.{ .space, .comment });
 
-        // Parse value
         const value_index = try self.value(gpa);
 
         try entries.append(gpa, .{
@@ -579,7 +572,6 @@ fn leafValue(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
             .space => {
                 const trailing = @intFromEnum(self.token_it.pos) - 2;
 
-                // Check if there's a newline ahead (indicating end of value)
                 const saved_pos = self.token_it.pos;
                 var has_newline = false;
                 while (self.token_it.peek()) |peek_tok| {
@@ -594,7 +586,6 @@ fn leafValue(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
                 }
                 self.token_it.seekTo(saved_pos);
 
-                // If there's a newline, end the value here
                 if (has_newline) {
                     const node_end: Token.Index = @enumFromInt(trailing);
                     self.nodes.set(@intFromEnum(node_index), .{
@@ -608,7 +599,6 @@ fn leafValue(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
                     return node_index.toOptional();
                 }
 
-                // Otherwise, continue consuming multi-word value
                 self.eatCommentsAndSpace(&.{});
                 if (self.token_it.peek()) |peek| {
                     if (peek.id != .literal) {
@@ -652,21 +642,15 @@ fn blockScalar(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
     const node_index: Node.Index = @enumFromInt(try self.nodes.addOne(gpa));
     const node_start = self.token_it.pos;
 
-    // Get the block scalar indicator (| or >)
     const indicator_tok = self.token_it.next() orelse return error.UnexpectedEof;
     const is_literal = indicator_tok.id == .literal_block;
 
-    // Parse optional chomping and indentation indicators
-    var chomping: ChompingIndicator = .clip; // default is clip
+    var chomping: ChompingIndicator = .clip;
     var explicit_indent: ?usize = null;
 
-    // Get the raw source after the | or > indicator
-    // The tokenizer consumes the indicators, so we need to read from token start + 1
     const token_loc = self.tokens.items(.token)[@intFromEnum(self.token_it.pos) - 1].loc;
-    var check_pos = token_loc.start + 1; // Skip past the | or >
+    var check_pos = token_loc.start + 1;
 
-    // Look for chomping and indentation indicators (can be in any order)
-    // Note: indicators can appear in the tokenizer-consumed part
     var has_indicators = false;
     while (check_pos < self.source.len) {
         const ch = self.source[check_pos];
@@ -686,15 +670,11 @@ fn blockScalar(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
                 check_pos += 1;
                 has_indicators = true;
             },
-            ' ', '\t', '#', '\r', '\n' => break, // End of indicators
+            ' ', '\t', '#', '\r', '\n' => break,
             else => break,
         }
     }
 
-    // Debug: uncomment to see chomping value
-    // std.debug.print("Block scalar chomping: {s}\n", .{@tagName(chomping)});
-
-    // Skip any trailing spaces/comments and expect newline
     while (self.token_it.peek()) |tok| {
         if (tok.id == .space or tok.id == .comment) {
             _ = self.token_it.next();
@@ -706,7 +686,6 @@ fn blockScalar(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
     const newline_tok = self.token_it.next() orelse return error.UnexpectedEof;
     if (newline_tok.id != .new_line) return error.UnexpectedToken;
 
-    // Now collect lines by reading source between current position and next dedent/EOF
     var content_lines: std.ArrayListUnmanaged([]const u8) = .empty;
     defer content_lines.deinit(gpa);
 
@@ -714,10 +693,8 @@ fn blockScalar(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
     var line_start_pos: ?Token.Index = null;
 
     while (true) {
-        // Mark where this line starts in tokens
         line_start_pos = self.token_it.pos;
 
-        // Check indentation (consume leading spaces)
         while (self.token_it.peek()) |tok| {
             if (tok.id == .space) {
                 _ = self.token_it.next();
@@ -726,39 +703,29 @@ fn blockScalar(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
             }
         }
 
-        // Get indentation level - column where we are now after consuming spaces
         const line_indent = self.getCol(self.token_it.pos);
 
-        // Check what comes next
         const next_tok = self.token_it.peek();
-        if (next_tok == null) break; // EOF
+        if (next_tok == null) break;
 
-        // Empty line
         if (next_tok.?.id == .new_line) {
             try content_lines.append(gpa, "");
             _ = self.token_it.next();
             continue;
         }
 
-        // Check for end markers
         if (next_tok.?.id == .doc_start or next_tok.?.id == .doc_end or next_tok.?.id == .eof) {
             break;
         }
 
-        // Set block indent from first line or explicit indicator
         if (block_indent == null) {
             if (explicit_indent) |indent| {
-                // Use explicit indentation indicator
                 block_indent = indent;
-                // Verify first line matches the explicit indent
                 if (line_indent != indent) {
                     return error.MalformedYaml;
                 }
             } else {
-                // First non-empty line sets the block indentation
-                // It must be indented (> 0) but we accept any positive indentation
                 if (line_indent == 0) {
-                    // Content must be indented
                     self.token_it.seekTo(line_start_pos.?);
                     break;
                 }
@@ -766,18 +733,14 @@ fn blockScalar(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
             }
         }
 
-        // Check for dedent
         if (line_indent < block_indent.?) {
             self.token_it.seekTo(line_start_pos.?);
             break;
         }
 
-        // Collect line content from source
-        // Find start and end positions in source for this line
         const line_tok_start = self.token_it.pos;
         var line_tok_end = line_tok_start;
 
-        // Consume all tokens until newline/EOF
         while (self.token_it.peek()) |tok| {
             if (tok.id == .new_line or tok.id == .eof) {
                 break;
@@ -786,7 +749,6 @@ fn blockScalar(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
             _ = self.token_it.next();
         }
 
-        // Get raw source for this line
         if (@intFromEnum(line_tok_end) >= @intFromEnum(line_tok_start)) {
             const start_loc = self.tokens.items(.token)[@intFromEnum(line_tok_start)].loc.start;
             const end_loc = self.tokens.items(.token)[@intFromEnum(line_tok_end)].loc.end;
@@ -796,7 +758,6 @@ fn blockScalar(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
             try content_lines.append(gpa, "");
         }
 
-        // Consume newline if present
         if (self.token_it.peek()) |tok| {
             if (tok.id == .new_line) {
                 _ = self.token_it.next();
@@ -810,28 +771,21 @@ fn blockScalar(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
 
     const node_end: Token.Index = @enumFromInt(@intFromEnum(self.token_it.pos));
 
-    // Apply chomping to content lines
     var final_lines = content_lines.items;
     switch (chomping) {
         .clip => {
-            // Keep single trailing newline (default YAML behavior)
-            // Remove empty trailing lines except the last one
             while (final_lines.len > 0 and final_lines[final_lines.len - 1].len == 0) {
                 final_lines = final_lines[0 .. final_lines.len - 1];
             }
         },
         .strip => {
-            // Remove all trailing empty lines
             while (final_lines.len > 0 and final_lines[final_lines.len - 1].len == 0) {
                 final_lines = final_lines[0 .. final_lines.len - 1];
             }
         },
-        .keep => {
-            // Keep all trailing lines as-is
-        },
+        .keep => {},
     }
 
-    // Process the content based on literal vs folded
     const processed = if (is_literal)
         try self.processLiteralBlock(gpa, final_lines, chomping)
     else
@@ -850,7 +804,6 @@ fn blockScalar(self: *Parser, gpa: Allocator) ParseError!Node.OptionalIndex {
 }
 
 fn processLiteralBlock(self: *Parser, gpa: Allocator, lines: []const []const u8, chomping: ChompingIndicator) Allocator.Error!String {
-    // Literal block preserves line breaks
     if (lines.len == 0) {
         const index: u32 = @intCast(self.string_bytes.items.len);
         return .{ .index = @enumFromInt(index), .len = 0 };
@@ -860,9 +813,8 @@ fn processLiteralBlock(self: *Parser, gpa: Allocator, lines: []const []const u8,
     for (lines, 0..) |line, i| {
         total_len += line.len;
         if (i < lines.len - 1) {
-            total_len += 1; // for newline
+            total_len += 1;
         } else {
-            // Add final newline based on chomping
             if (chomping != .strip) total_len += 1;
         }
     }
@@ -875,7 +827,6 @@ fn processLiteralBlock(self: *Parser, gpa: Allocator, lines: []const []const u8,
         if (i < lines.len - 1) {
             self.string_bytes.appendAssumeCapacity('\n');
         } else {
-            // Add final newline based on chomping
             if (chomping != .strip) {
                 self.string_bytes.appendAssumeCapacity('\n');
             }
@@ -886,8 +837,6 @@ fn processLiteralBlock(self: *Parser, gpa: Allocator, lines: []const []const u8,
 }
 
 fn processFoldedBlock(self: *Parser, gpa: Allocator, lines: []const []const u8, chomping: ChompingIndicator) Allocator.Error!String {
-    // Folded block folds line breaks into spaces
-    // Empty lines become line breaks
     if (lines.len == 0) {
         const index: u32 = @intCast(self.string_bytes.items.len);
         return .{ .index = @enumFromInt(index), .len = 0 };
@@ -897,15 +846,12 @@ fn processFoldedBlock(self: *Parser, gpa: Allocator, lines: []const []const u8, 
     for (lines, 0..) |line, i| {
         total_len += line.len;
         if (i < lines.len - 1) {
-            // Empty lines and more indented lines preserve line breaks
-            // Otherwise, fold to a space
             if (line.len == 0 or (i + 1 < lines.len and lines[i + 1].len == 0)) {
                 total_len += 1;
             } else {
-                total_len += 1; // space
+                total_len += 1;
             }
         } else {
-            // Add final newline based on chomping
             if (chomping != .strip) total_len += 1;
         }
     }
@@ -922,7 +868,6 @@ fn processFoldedBlock(self: *Parser, gpa: Allocator, lines: []const []const u8, 
                 self.string_bytes.appendAssumeCapacity(' ');
             }
         } else {
-            // Add final newline based on chomping
             if (chomping != .strip) {
                 self.string_bytes.appendAssumeCapacity('\n');
             }
@@ -1087,7 +1032,6 @@ fn rawString(self: Parser, start: Token.Index, end: Token.Index) []const u8 {
 fn token(self: Parser, index: Token.Index) Token {
     const idx = @intFromEnum(index);
     if (idx >= self.tokens.len) {
-        // Return an EOF token if out of bounds
         return Token{
             .id = .eof,
             .loc = .{
@@ -1174,324 +1118,3 @@ pub const ParseError = error{
 // Tests
 // ============================================================================
 
-test "parse simple literal block scalar" {
-    const source =
-        \\key: |
-        \\  line 1
-        \\  line 2
-        \\  line 3
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse simple folded block scalar" {
-    const source =
-        \\key: >
-        \\  line 1
-        \\  line 2
-        \\  line 3
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse literal block with empty lines" {
-    const source =
-        \\description: |
-        \\  First paragraph
-        \\
-        \\  Second paragraph
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse multiple keys with block scalars" {
-    const source =
-        \\key1: |
-        \\  value 1
-        \\key2: >
-        \\  value 2
-        \\key3: simple
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse nested map with block scalar" {
-    const source =
-        \\parent:
-        \\  child: |
-        \\    nested value
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse quoted strings" {
-    const source =
-        \\single: 'hello world'
-        \\double: "hello\nworld"
-        \\escape: "with \"quotes\""
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse list with various value types" {
-    const source =
-        \\items:
-        \\  - simple
-        \\  - 'quoted'
-        \\  - "double"
-        \\  - 123
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse flow sequences" {
-    const source =
-        \\inline: [a, b, c]
-        \\multiline: [
-        \\  x,
-        \\  y,
-        \\  z
-        \\]
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse flow mappings" {
-    const source =
-        \\inline: {a: 1, b: 2, c: 3}
-        \\multiline: {
-        \\  x: hello,
-        \\  y: world
-        \\}
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse explicit document markers" {
-    const source =
-        \\---
-        \\key: value
-        \\...
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse multiple documents" {
-    const source =
-        \\---
-        \\doc: 1
-        \\---
-        \\doc: 2
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 2), tree.docs.len);
-}
-
-test "parse comments" {
-    const source =
-        \\# Top level comment
-        \\key: value # inline comment
-        \\# Another comment
-        \\list:
-        \\  # List comment
-        \\  - item1
-        \\  - item2
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse inline comments" {
-    const source =
-        \\key: value # inline comment
-        \\other: data
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse deeply nested structure" {
-    const source =
-        \\level1:
-        \\  level2:
-        \\    level3:
-        \\      level4:
-        \\        key: value
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse empty values" {
-    const source =
-        \\key1:
-        \\key2: 
-        \\key3: value
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse mixed indentation list" {
-    const source =
-        \\items:
-        \\  - name: first
-        \\    value: 1
-        \\  - name: second
-        \\    value: 2
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse escape sequences in double quotes" {
-    const source =
-        \\escaped: "newline\ntab\there"
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
-
-test "parse escape sequences in single quotes" {
-    const source =
-        \\escaped: 'it''s a test'
-    ;
-
-    var parser = try Parser.init(std.testing.allocator, source);
-    defer parser.deinit(std.testing.allocator);
-
-    try parser.parse(std.testing.allocator);
-    var tree = try parser.toOwnedTree(std.testing.allocator);
-    defer tree.deinit(std.testing.allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), tree.docs.len);
-}
