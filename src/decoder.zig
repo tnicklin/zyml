@@ -17,11 +17,16 @@ pub const Decoder = struct {
         self.arena.deinit();
     }
 
-    pub fn decode(self: *Decoder, comptime T: type, source: []const u8) !T {
+    fn loadYaml(self: *Decoder, source: []const u8) !Yaml {
         var yaml = Yaml{ .source = source };
-        defer yaml.deinit(self.allocator);
-
+        errdefer yaml.deinit(self.allocator);
         try yaml.load(self.allocator);
+        return yaml;
+    }
+
+    pub fn decode(self: *Decoder, comptime T: type, source: []const u8) !T {
+        var yaml = try self.loadYaml(source);
+        defer yaml.deinit(self.allocator);
 
         return try yaml.parse(self.arena.allocator(), T);
     }
@@ -44,10 +49,8 @@ pub const Decoder = struct {
     }
 
     pub fn decodeAll(self: *Decoder, comptime T: type, source: []const u8) ![]T {
-        var yaml = Yaml{ .source = source };
+        var yaml = try self.loadYaml(source);
         defer yaml.deinit(self.allocator);
-
-        try yaml.load(self.allocator);
 
         return try yaml.parse(self.arena.allocator(), []T);
     }

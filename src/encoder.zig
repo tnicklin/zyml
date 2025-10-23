@@ -17,12 +17,13 @@ pub const Encoder = struct {
         self.arena.deinit();
     }
 
-    pub fn encode(self: *Encoder, value: anytype) ![]const u8 {
+    fn encodeValue(self: *Encoder, value: anytype) !Yaml.Value {
         const arena_allocator = self.arena.allocator();
+        return try Yaml.Value.encode(arena_allocator, value) orelse error.CannotEncodeValue;
+    }
 
-        const yaml_value = try Yaml.Value.encode(arena_allocator, value) orelse {
-            return error.CannotEncodeValue;
-        };
+    pub fn encode(self: *Encoder, value: anytype) ![]const u8 {
+        const yaml_value = try self.encodeValue(value);
 
         var list: std.ArrayListUnmanaged(u8) = .empty;
         defer list.deinit(self.allocator);
@@ -33,12 +34,7 @@ pub const Encoder = struct {
     }
 
     pub fn encodeToWriter(self: *Encoder, writer: anytype, value: anytype) !void {
-        const arena_allocator = self.arena.allocator();
-
-        const yaml_value = try Yaml.Value.encode(arena_allocator, value) orelse {
-            return error.CannotEncodeValue;
-        };
-
+        const yaml_value = try self.encodeValue(value);
         try yaml_value.toString(writer, .{});
     }
 
@@ -46,17 +42,13 @@ pub const Encoder = struct {
         const file = try std.fs.cwd().createFile(path, .{});
         defer file.close();
 
-        // Encode to string first
         const yaml_str = try self.encode(value);
         defer self.allocator.free(yaml_str);
 
-        // Write to file
         try file.writeAll(yaml_str);
     }
 
     pub fn encodeAll(self: *Encoder, values: anytype) ![]const u8 {
-        const arena_allocator = self.arena.allocator();
-
         var list: std.ArrayListUnmanaged(u8) = .empty;
         defer list.deinit(self.allocator);
 
@@ -65,10 +57,7 @@ pub const Encoder = struct {
         inline for (values) |value| {
             try writer.writeAll("---\n");
 
-            const yaml_value = try Yaml.Value.encode(arena_allocator, value) orelse {
-                return error.CannotEncodeValue;
-            };
-
+            const yaml_value = try self.encodeValue(value);
             try yaml_value.toString(writer, .{});
             try writer.writeByte('\n');
         }

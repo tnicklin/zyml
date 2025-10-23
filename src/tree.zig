@@ -32,8 +32,6 @@ pub fn nodeScope(tree: Tree, node: Node.Index) Node.Scope {
     return tree.nodes.items(.scope)[@intFromEnum(node)];
 }
 
-/// Returns the requested data, as well as the new index which is at the start of the
-/// trailers for the object.
 pub fn extraData(tree: Tree, comptime T: type, index: Extra) struct { data: T, end: Extra } {
     const fields = std.meta.fields(T);
     var i = @intFromEnum(index);
@@ -53,7 +51,6 @@ pub fn extraData(tree: Tree, comptime T: type, index: Extra) struct { data: T, e
     };
 }
 
-/// Returns the directive metadata if present.
 pub fn directive(self: Tree, node_index: Node.Index) ?[]const u8 {
     const tag = self.nodeTag(node_index);
     switch (tag) {
@@ -66,7 +63,6 @@ pub fn directive(self: Tree, node_index: Node.Index) ?[]const u8 {
     }
 }
 
-/// Returns the raw string such that it matches the range [start, end) in the Token stream.
 pub fn rawString(self: Tree, start: Token.Index, end: Token.Index) []const u8 {
     const start_token = self.token(start);
     const end_token = self.token(end);
@@ -105,34 +101,21 @@ pub const Node = struct {
     };
 
     pub const Data = union {
-        /// Node index.
         node: Index,
-
-        /// Optional Node index.
         maybe_node: OptionalIndex,
-
-        /// Document with a directive metadata.
         doc_with_directive: struct {
             maybe_node: OptionalIndex,
             directive: Token.Index,
         },
-
-        /// Map with exactly one key-value pair.
         map: struct {
             key: Token.Index,
             maybe_node: OptionalIndex,
         },
-
-        /// List with exactly two elements.
         list: struct {
             el1: Index,
             el2: Index,
         },
-
-        /// Index and length into the string table.
         string: String,
-
-        /// Index into extra array.
         extra: Extra,
     };
 
@@ -156,12 +139,10 @@ pub const Node = struct {
     };
 };
 
-/// Index into extra array.
 pub const Extra = enum(u32) {
     _,
 };
 
-/// Trailing is a list of MapEntries.
 pub const Map = struct {
     map_len: u32,
 
@@ -171,7 +152,6 @@ pub const Map = struct {
     };
 };
 
-/// Trailing is a list of Node indexes.
 pub const List = struct {
     list_len: u32,
 
@@ -180,7 +160,6 @@ pub const List = struct {
     };
 };
 
-/// Index and length into string table.
 pub const String = struct {
     index: Index,
     len: u32,
@@ -194,13 +173,11 @@ pub const String = struct {
     }
 };
 
-/// Tracked line-column information for each Token.
 pub const LineCol = struct {
     line: u32,
     col: u32,
 };
 
-/// Token with line-column information.
 pub const TokenWithLineCol = struct {
     token: Token,
     line_col: LineCol,

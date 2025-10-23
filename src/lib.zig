@@ -17,14 +17,3 @@ pub const decodeFromReader = @import("decoder.zig").decodeFromReader;
 pub const Encoder = @import("encoder.zig").Encoder;
 pub const encode = @import("encoder.zig").encode;
 pub const encodeToFile = @import("encoder.zig").encodeToFile;
-
-pub fn toString(gpa: std.mem.Allocator, input: anytype, writer: anytype) Yaml.ToStringError!void {
-    var arena = std.heap.ArenaAllocator.init(gpa);
-    defer arena.deinit();
-
-    const maybe_value = try Yaml.Value.encode(arena.allocator(), input);
-
-    if (maybe_value) |value| {
-        try value.toString(writer, .{});
-    }
-}
