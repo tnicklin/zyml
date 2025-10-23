@@ -52,7 +52,7 @@ pub fn main() !void {
         \\features: [BGP, OSPF, eBPF]
     ;
 
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
     std.debug.print("App: {s} v{s}\n", .{config.name, config.version});
 }
 ```
@@ -101,7 +101,7 @@ pub fn main() !void {
 // Decode YAML → Struct
 var decoder = zyml.Decoder.init(allocator);
 defer decoder.deinit();
-const config = try decoder.decodeFromSlice(Config, yaml_string);
+const config = try decoder.decode(Config, yaml_string);
 
 // Encode Struct → YAML
 var encoder = zyml.Encoder.init(allocator);

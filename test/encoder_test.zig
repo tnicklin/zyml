@@ -102,7 +102,7 @@ test "encode and decode roundtrip" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const decoded = try decoder.decodeFromSlice(Config, yaml);
+    const decoded = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings(original.name, decoded.name);
     try std.testing.expectEqual(original.port, decoded.port);

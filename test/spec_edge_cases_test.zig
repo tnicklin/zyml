@@ -20,7 +20,7 @@ test "spec: very long string" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 1000), data.long_string.len);
 }
 
@@ -54,7 +54,7 @@ test "spec: many keys" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(i64, 1), data.k01);
     try std.testing.expectEqual(@as(i64, 10), data.k10);
 }
@@ -79,7 +79,7 @@ test "spec: deeply nested structure" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(i64, 42), data.l1.l2.l3.l4.l5.v);
 }
 
@@ -94,7 +94,7 @@ test "spec: empty document" {
     defer decoder.deinit();
 
     // Empty document should fail or return empty
-    _ = decoder.decodeFromSlice(Data, yaml) catch {
+    _ = decoder.decode(Data, yaml) catch {
         return; // Expected to fail
     };
 }
@@ -113,7 +113,7 @@ test "spec: whitespace variations" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value1", data.key1);
     try std.testing.expectEqualStrings("value2", data.key2);
 }
@@ -128,7 +128,7 @@ test "spec: trailing whitespace" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value", data.key);
 }
 
@@ -146,7 +146,7 @@ test "spec: keys with hyphens" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value1", data.@"kebab-case");
     try std.testing.expectEqualStrings("value2", data.@"multi-word-key");
 }
@@ -165,7 +165,7 @@ test "spec: keys with underscores" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value1", data.snake_case);
     try std.testing.expectEqualStrings("value2", data.multi_word_key);
 }
@@ -184,7 +184,7 @@ test "spec: string and numeric values" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("abc123", data.text);
     try std.testing.expectEqual(@as(i64, 456), data.actual_number);
 }
@@ -201,7 +201,7 @@ test "spec: optional fields with missing values" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("present", data.required);
     try std.testing.expect(data.optional1 == null);
     try std.testing.expect(data.optional2 == null);
@@ -217,7 +217,7 @@ test "spec: mixed types in flow sequence" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 3), data.mixed.len);
 }
 
@@ -235,7 +235,7 @@ test "spec: unicode in keys and values" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("🎉", data.emoji);
     try std.testing.expectEqualStrings("你好", data.unicode);
 }
@@ -253,7 +253,7 @@ test "spec: large array" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 20), data.numbers.len);
     try std.testing.expectEqual(@as(i64, 1), data.numbers[0]);
     try std.testing.expectEqual(@as(i64, 20), data.numbers[19]);
@@ -312,7 +312,7 @@ test "spec: complex real-world config" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Config, yaml);
+    const data = try decoder.decode(Config, yaml);
     try std.testing.expectEqualStrings("MyApplication", data.app_name);
     try std.testing.expectEqualStrings("1.0.0", data.version);
     try std.testing.expectEqualStrings("db.example.com", data.database.host);

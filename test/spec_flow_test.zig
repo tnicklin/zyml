@@ -15,7 +15,7 @@ test "spec: flow sequence - simple" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 3), data.colors.len);
     try std.testing.expectEqualStrings("red", data.colors[0]);
     try std.testing.expectEqualStrings("green", data.colors[1]);
@@ -32,7 +32,7 @@ test "spec: flow sequence - numbers" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 4), data.coordinates.len);
     try std.testing.expectEqual(@as(i64, 10), data.coordinates[0]);
     try std.testing.expectEqual(@as(i64, 40), data.coordinates[3]);
@@ -48,7 +48,7 @@ test "spec: flow sequence - nested" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 3), data.matrix.len);
     try std.testing.expectEqual(@as(i64, 1), data.matrix[0][0]);
     try std.testing.expectEqual(@as(i64, 4), data.matrix[1][1]);
@@ -71,7 +71,7 @@ test "spec: flow sequence - multiline" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 3), data.items.len);
     try std.testing.expectEqualStrings("first", data.items[0]);
     try std.testing.expectEqualStrings("second", data.items[1]);
@@ -88,7 +88,7 @@ test "spec: flow sequence - empty" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 0), data.empty.len);
 }
 
@@ -105,7 +105,7 @@ test "spec: flow mapping - simple" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("localhost", data.config.host);
     try std.testing.expectEqual(@as(i64, 8080), data.config.port);
 }
@@ -130,7 +130,7 @@ test "spec: flow mapping - multiline" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("example.com", data.server.host);
     try std.testing.expectEqual(@as(i64, 443), data.server.port);
     try std.testing.expectEqual(true, data.server.ssl);
@@ -148,7 +148,7 @@ test "spec: flow mapping - empty" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     _ = data;
     // Empty flow mapping should parse without error
 }
@@ -169,7 +169,7 @@ test "spec: mixed flow and block" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 2), data.block_key.len);
     try std.testing.expectEqual(@as(usize, 3), data.flow_key.len);
     try std.testing.expectEqualStrings("item1", data.block_key[0]);
@@ -187,7 +187,7 @@ test "spec: flow mapping with quoted values" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value1", data.key1);
     try std.testing.expectEqualStrings("value2", data.key2);
 }
@@ -202,7 +202,7 @@ test "spec: flow sequence with quoted strings" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 3), data.items.len);
     try std.testing.expectEqualStrings("first item", data.items[0]);
     try std.testing.expectEqualStrings("second item", data.items[1]);
@@ -224,7 +224,7 @@ test "spec: flow mapping in flow sequence" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 2), data.items.len);
     try std.testing.expectEqual(@as(i64, 1), data.items[0].id);
     try std.testing.expectEqualStrings("first", data.items[0].name);
@@ -248,7 +248,7 @@ test "spec: complex flow structures" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 3), data.metadata.tags.len);
     try std.testing.expectEqualStrings("urgent", data.metadata.tags[0]);
     try std.testing.expectEqual(true, data.metadata.properties.visible);

@@ -15,7 +15,7 @@ test "missing fields get zero values" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("example.com", config.host);
     try std.testing.expectEqual(@as(u16, 3000), config.port);
@@ -46,7 +46,7 @@ test "Go-style: nested structs with zero values" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("my-service", config.service_name);
     try std.testing.expectEqualStrings("db.example.com", config.database.host);
@@ -70,7 +70,7 @@ test "Go-style: explicit defaults override zero values" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     // Explicit defaults used
     try std.testing.expectEqualStrings("localhost", config.host);
@@ -92,7 +92,7 @@ test "Go-style: empty slices for missing arrays" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("test", config.name);
 
@@ -133,7 +133,7 @@ test "Go-style: real world config without explicit defaults" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     // Provided fields
     try std.testing.expectEqualStrings("node-1", config.node_id);

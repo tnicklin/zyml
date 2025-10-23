@@ -15,7 +15,7 @@ test "spec: hexadecimal integers" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(i64, 255), data.hex_value);
 }
 
@@ -29,7 +29,7 @@ test "spec: octal integers" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(i64, 511), data.octal_value);
 }
 
@@ -43,7 +43,7 @@ test "spec: binary integers" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(i64, 10), data.binary_value);
 }
 
@@ -63,7 +63,7 @@ test "spec: positive and negative integers" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(i64, 42), data.pos);
     try std.testing.expectEqual(@as(i64, -17), data.neg);
     try std.testing.expectEqual(@as(i64, 99), data.explicit_pos);
@@ -85,7 +85,7 @@ test "spec: floating point formats" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(f64, 3.14), data.simple);
     try std.testing.expectApproxEqRel(@as(f64, 6.022e23), data.scientific, 1e-10);
     try std.testing.expectApproxEqRel(@as(f64, 1.2e-5), data.neg_scientific, 1e-10);
@@ -106,7 +106,7 @@ test "spec: infinity values" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    _ = decoder.decodeFromSlice(Data, yaml) catch {
+    _ = decoder.decode(Data, yaml) catch {
         // Expected: inf not implemented yet
         return;
     };
@@ -122,7 +122,7 @@ test "spec: NaN value" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    _ = decoder.decodeFromSlice(Data, yaml) catch {
+    _ = decoder.decode(Data, yaml) catch {
         // Expected: .nan not implemented yet
         return;
     };
@@ -144,7 +144,7 @@ test "spec: zero variations" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(i64, 0), data.zero);
     try std.testing.expectEqual(@as(f64, 0.0), data.float_zero);
     try std.testing.expectEqual(@as(f64, -0.0), data.neg_zero);
@@ -164,7 +164,7 @@ test "spec: large integers" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(i64, 9223372036854775807), data.large_pos);
     try std.testing.expectEqual(@as(i64, -9223372036854775808), data.large_neg);
 }
@@ -179,7 +179,7 @@ test "spec: mixed numeric types in sequence" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    _ = decoder.decodeFromSlice(Data, yaml) catch {
+    _ = decoder.decode(Data, yaml) catch {
         // Expected: hex/octal in flow may not be supported
         return;
     };
@@ -195,7 +195,7 @@ test "spec: underscores in numbers (if supported)" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    _ = decoder.decodeFromSlice(Data, yaml) catch {
+    _ = decoder.decode(Data, yaml) catch {
         // Expected: underscores may not be supported
         return;
     };

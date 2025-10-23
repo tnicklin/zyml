@@ -18,7 +18,7 @@ test "spec: full-line comment" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value", data.key);
 }
 
@@ -32,7 +32,7 @@ test "spec: inline comment" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value", data.key);
 }
 
@@ -50,7 +50,7 @@ test "spec: multiple inline comments" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("localhost", data.host);
     try std.testing.expectEqual(@as(i64, 8080), data.port);
 }
@@ -70,7 +70,7 @@ test "spec: comment before value" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value1", data.key1);
     try std.testing.expectEqualStrings("value2", data.key2);
 }
@@ -94,7 +94,7 @@ test "spec: comments in nested structures" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Config, yaml);
+    const data = try decoder.decode(Config, yaml);
     try std.testing.expectEqualStrings("localhost", data.server.host);
     try std.testing.expectEqual(@as(i64, 8080), data.server.port);
 }
@@ -117,7 +117,7 @@ test "spec: comments in lists" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 3), data.items.len);
     try std.testing.expectEqualStrings("apple", data.items[0]);
     try std.testing.expectEqualStrings("banana", data.items[1]);
@@ -137,7 +137,7 @@ test "spec: empty comment" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value", data.key);
 }
 
@@ -161,7 +161,7 @@ test "spec: comment-only lines" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value_a", data.a);
     try std.testing.expectEqualStrings("value_b", data.b);
 }
@@ -176,7 +176,7 @@ test "spec: comment with special characters" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value", data.key);
 }
 
@@ -197,7 +197,7 @@ test "spec: comments around document markers" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("data", data.value);
 }
 
@@ -216,7 +216,7 @@ test "spec: multiple consecutive comments" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value", data.key);
 }
 

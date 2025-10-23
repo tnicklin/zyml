@@ -17,7 +17,7 @@ test "decode simple struct from string" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("my-app", config.name);
     try std.testing.expectEqualStrings("1.0.0", config.version);
@@ -44,7 +44,7 @@ test "decode nested struct" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("web-server", config.app_name);
     try std.testing.expectEqualStrings("localhost", config.database.host);
@@ -65,7 +65,7 @@ test "decode array/list" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqual(@as(usize, 3), config.features.len);
     try std.testing.expectEqualStrings("BGP", config.features[0]);
@@ -91,7 +91,7 @@ test "decode with flow collections" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const point = try decoder.decodeFromSlice(Point, yaml);
+    const point = try decoder.decode(Point, yaml);
 
     try std.testing.expectEqual(@as(usize, 3), point.coords.len);
     try std.testing.expectEqual(@as(i64, 10), point.coords[0]);
@@ -118,7 +118,7 @@ test "decode multiple documents" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const configs = try decoder.decodeAllFromSlice(Config, yaml);
+    const configs = try decoder.decodeAll(Config, yaml);
 
     try std.testing.expectEqual(@as(usize, 3), configs.len);
     try std.testing.expectEqualStrings("doc1", configs[0].name);
@@ -162,7 +162,7 @@ test "decode with comments" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("localhost", config.host);
     try std.testing.expectEqual(@as(i64, 3000), config.port);
@@ -187,7 +187,7 @@ test "decode with block scalars" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     // Description should have newlines preserved
     try std.testing.expect(std.mem.indexOf(u8, config.description, "\n") != null);
@@ -229,7 +229,7 @@ test "decode with optional fields" {
     defer decoder.deinit();
 
     {
-        const config = try decoder.decodeFromSlice(Config, yaml1);
+        const config = try decoder.decode(Config, yaml1);
 
         try std.testing.expectEqualStrings("present", config.required);
         try std.testing.expect(config.optional != null);
@@ -237,7 +237,7 @@ test "decode with optional fields" {
     }
 
     {
-        const config = try decoder.decodeFromSlice(Config, yaml2);
+        const config = try decoder.decode(Config, yaml2);
 
         try std.testing.expectEqualStrings("present", config.required);
         try std.testing.expect(config.optional == null);

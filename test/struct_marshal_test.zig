@@ -17,7 +17,7 @@ test "decode struct with default values - all fields present" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("my-app", config.name);
     try std.testing.expectEqualStrings("1.0.0", config.version);
@@ -37,7 +37,7 @@ test "decode struct with default values - some fields missing" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("my-app", config.name);
     try std.testing.expectEqualStrings("0.0.1", config.version);
@@ -55,7 +55,7 @@ test "decode struct with default values - all fields missing" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("default-app", config.name);
     try std.testing.expectEqualStrings("0.0.1", config.version);
@@ -75,7 +75,7 @@ test "decode struct with mix of optional and default values" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("present", config.required);
     try std.testing.expectEqual(@as(i64, 42), config.with_default);
@@ -102,7 +102,7 @@ test "decode nested struct with default values" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("web-server", config.app_name);
     try std.testing.expectEqualStrings("db.example.com", config.database.host);
@@ -127,7 +127,7 @@ test "decode nested struct - parent field missing with defaults" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("web-server", config.app_name);
     try std.testing.expectEqualStrings("localhost", config.database.host);
@@ -148,7 +148,7 @@ test "decode empty values vs missing values" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("", config.explicit_empty);
     try std.testing.expectEqualStrings("default", config.missing);
@@ -169,7 +169,7 @@ test "decode numeric defaults" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqual(@as(i64, 42), config.int_value);
     try std.testing.expectEqual(@as(u32, 100), config.uint_value);
@@ -191,7 +191,7 @@ test "decode array with defaults" {
     defer decoder.deinit();
 
     {
-        const config = try decoder.decodeFromSlice(Config, yaml1);
+        const config = try decoder.decode(Config, yaml1);
         try std.testing.expectEqual(@as(usize, 2), config.tags.len);
         try std.testing.expectEqualStrings("foo", config.tags[0]);
         try std.testing.expectEqualStrings("bar", config.tags[1]);
@@ -200,7 +200,7 @@ test "decode array with defaults" {
 
     const yaml2 = "priority: 5";
     {
-        const config = try decoder.decodeFromSlice(Config, yaml2);
+        const config = try decoder.decode(Config, yaml2);
         try std.testing.expectEqual(@as(usize, 0), config.tags.len);
         try std.testing.expectEqual(@as(i64, 5), config.priority);
     }
@@ -236,7 +236,7 @@ test "decode complex nested structure with defaults" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("api-gateway", config.service_name);
     try std.testing.expectEqual(@as(usize, 2), config.endpoints.len);
@@ -266,7 +266,7 @@ test "decode with hyphenated field names and defaults" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("my-service", config.app_name);
     try std.testing.expectEqual(@as(i64, 10), config.max_connections);
@@ -288,7 +288,7 @@ test "decode with zero values vs defaults" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqual(@as(i64, 0), config.count);
     try std.testing.expectEqual(false, config.enabled);
@@ -307,7 +307,7 @@ test "decode empty string vs missing string field" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqualStrings("", config.name);
     try std.testing.expectEqualStrings("none", config.description);
@@ -325,7 +325,7 @@ test "decode with all types having defaults" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqual(@as(i32, 1), config.a);
     try std.testing.expectEqualStrings("two", config.b);
@@ -350,7 +350,7 @@ test "decode override all defaults" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqual(@as(i32, 100), config.a);
     try std.testing.expectEqualStrings("custom", config.b);
@@ -371,7 +371,7 @@ test "decode struct with slice defaults" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(Config, yaml);
+    const config = try decoder.decode(Config, yaml);
 
     try std.testing.expectEqual(@as(usize, 1), config.tags.len);
     try std.testing.expectEqualStrings("custom", config.tags[0]);
@@ -431,7 +431,7 @@ test "decode real-world config example" {
 
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
-    const config = try decoder.decodeFromSlice(AppConfig, yaml);
+    const config = try decoder.decode(AppConfig, yaml);
 
     try std.testing.expectEqualStrings("production", config.environment);
     try std.testing.expectEqualStrings("warn", config.log.level);

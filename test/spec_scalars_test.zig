@@ -23,7 +23,7 @@ test "spec: plain scalars" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("hello world", data.string);
     try std.testing.expectEqual(@as(i64, 123), data.number);
     try std.testing.expectEqual(@as(i64, -456), data.negative);
@@ -46,7 +46,7 @@ test "spec: single-quoted scalars" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("hello", data.simple);
     try std.testing.expectEqualStrings("hello world", data.with_spaces);
     try std.testing.expectEqualStrings("it's working", data.with_quotes);
@@ -70,7 +70,7 @@ test "spec: double-quoted scalars" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("hello", data.simple);
     try std.testing.expectEqualStrings("line1\nline2", data.with_newline);
     try std.testing.expectEqualStrings("col1\tcol2", data.with_tab);
@@ -91,7 +91,7 @@ test "spec: boolean values" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(true, data.bool_true);
     try std.testing.expectEqual(false, data.bool_false);
 }
@@ -116,7 +116,7 @@ test "spec: numeric types" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(i64, 42), data.int_decimal);
     try std.testing.expectEqual(@as(i64, -17), data.int_negative);
     try std.testing.expectEqual(@as(f64, 3.14159), data.float_decimal);
@@ -138,7 +138,7 @@ test "spec: empty string value" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("", data.empty);
     try std.testing.expectEqualStrings("value", data.present);
 }
@@ -157,7 +157,7 @@ test "spec: multi-word plain scalars" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("this is a sentence", data.sentence);
     try std.testing.expectEqualStrings("/usr/local/bin", data.path);
 }
@@ -178,7 +178,7 @@ test "spec: scalars with special characters" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("http://example.com", data.colon_in_value);
     try std.testing.expectEqualStrings("#hashtag", data.hash_quoted);
     try std.testing.expectEqualStrings("@username", data.at_sign);

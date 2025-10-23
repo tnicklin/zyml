@@ -20,7 +20,7 @@ test "spec: simple sequence" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 3), data.items.len);
     try std.testing.expectEqualStrings("apple", data.items[0]);
     try std.testing.expectEqualStrings("banana", data.items[1]);
@@ -43,7 +43,7 @@ test "spec: sequence of numbers" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 4), data.numbers.len);
     try std.testing.expectEqual(@as(i64, 1), data.numbers[0]);
     try std.testing.expectEqual(@as(i64, 42), data.numbers[3]);
@@ -64,7 +64,7 @@ test "spec: nested sequences" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 3), data.matrix.len);
     try std.testing.expectEqual(@as(usize, 3), data.matrix[0].len);
     try std.testing.expectEqual(@as(i64, 1), data.matrix[0][0]);
@@ -88,7 +88,7 @@ test "spec: simple mapping" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("John Doe", data.name);
     try std.testing.expectEqual(@as(i64, 30), data.age);
     try std.testing.expectEqualStrings("New York", data.city);
@@ -117,7 +117,7 @@ test "spec: nested mappings" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Person, yaml);
+    const data = try decoder.decode(Person, yaml);
     try std.testing.expectEqualStrings("Jane Smith", data.name);
     try std.testing.expectEqualStrings("123 Main St", data.address.street);
     try std.testing.expectEqualStrings("Boston", data.address.city);
@@ -147,7 +147,7 @@ test "spec: sequence of mappings" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 3), data.products.len);
     try std.testing.expectEqualStrings("Widget", data.products[0].name);
     try std.testing.expectEqual(@as(f64, 9.99), data.products[0].price);
@@ -172,7 +172,7 @@ test "spec: mapping of sequences" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 2), data.fruits.len);
     try std.testing.expectEqual(@as(usize, 2), data.vegetables.len);
     try std.testing.expectEqualStrings("apple", data.fruits[0]);
@@ -206,7 +206,7 @@ test "spec: deeply nested structures" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("deep", data.level1.level2.level3.value);
 }
 
@@ -226,7 +226,7 @@ test "spec: empty collections" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 0), data.empty_list.len);
 }
 
@@ -259,7 +259,7 @@ test "spec: mixed indentation levels" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Config, yaml);
+    const data = try decoder.decode(Config, yaml);
     try std.testing.expectEqualStrings("localhost", data.database.host);
     try std.testing.expectEqual(@as(i64, 5432), data.database.port);
     try std.testing.expectEqualStrings("admin", data.database.credentials.username);

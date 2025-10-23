@@ -18,7 +18,7 @@ test "spec: document with start marker" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value", data.key);
 }
 
@@ -36,7 +36,7 @@ test "spec: document with start and end markers" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value", data.key);
 }
 
@@ -57,7 +57,7 @@ test "spec: multiple documents" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const docs = try decoder.decodeAllFromSlice(Data, yaml);
+    const docs = try decoder.decodeAll(Data, yaml);
     try std.testing.expectEqual(@as(usize, 3), docs.len);
     try std.testing.expectEqual(@as(i64, 1), docs[0].id);
     try std.testing.expectEqual(@as(i64, 2), docs[1].id);
@@ -81,7 +81,7 @@ test "spec: multiple documents with end markers" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const docs = try decoder.decodeAllFromSlice(Data, yaml);
+    const docs = try decoder.decodeAll(Data, yaml);
     try std.testing.expectEqual(@as(usize, 2), docs.len);
     try std.testing.expectEqualStrings("first", docs[0].value);
     try std.testing.expectEqualStrings("second", docs[1].value);
@@ -105,7 +105,7 @@ test "spec: mixed document markers" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const docs = try decoder.decodeAllFromSlice(Data, yaml);
+    const docs = try decoder.decodeAll(Data, yaml);
     try std.testing.expectEqual(@as(usize, 3), docs.len);
     try std.testing.expectEqualStrings("doc1", docs[0].name);
     try std.testing.expectEqualStrings("doc2", docs[1].name);
@@ -122,7 +122,7 @@ test "spec: document without explicit marker" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("document", data.implicit);
 }
 
@@ -144,7 +144,7 @@ test "spec: multiple documents with different structures" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const docs = try decoder.decodeAllFromSlice(Doc1, yaml);
+    const docs = try decoder.decodeAll(Doc1, yaml);
     try std.testing.expectEqual(@as(usize, 2), docs.len);
     try std.testing.expectEqualStrings("config", docs[0].type);
     try std.testing.expectEqual(@as(i64, 1), docs[0].count);
@@ -173,7 +173,7 @@ test "spec: multiple documents with complex content" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const servers = try decoder.decodeAllFromSlice(Server, yaml);
+    const servers = try decoder.decodeAll(Server, yaml);
     try std.testing.expectEqual(@as(usize, 3), servers.len);
     try std.testing.expectEqualStrings("server1", servers[0].host);
     try std.testing.expectEqual(@as(i64, 8080), servers[0].port);
@@ -197,7 +197,7 @@ test "spec: document markers with empty lines" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("data", data.value);
 }
 

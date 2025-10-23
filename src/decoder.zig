@@ -17,20 +17,20 @@ pub const Decoder = struct {
         self.arena.deinit();
     }
 
-    pub fn decode(self: *Decoder, comptime T: type, reader: anytype) !T {
-        const content = try reader.readAllAlloc(self.allocator, std.math.maxInt(usize));
-        defer self.allocator.free(content);
-
-        return try self.decodeFromSlice(T, content);
-    }
-
-    pub fn decodeFromSlice(self: *Decoder, comptime T: type, source: []const u8) !T {
+    pub fn decode(self: *Decoder, comptime T: type, source: []const u8) !T {
         var yaml = Yaml{ .source = source };
         defer yaml.deinit(self.allocator);
 
         try yaml.load(self.allocator);
 
         return try yaml.parse(self.arena.allocator(), T);
+    }
+
+    pub fn decodeFromReader(self: *Decoder, comptime T: type, reader: anytype) !T {
+        const content = try reader.readAllAlloc(self.allocator, std.math.maxInt(usize));
+        defer self.allocator.free(content);
+
+        return try self.decode(T, content);
     }
 
     pub fn decodeFromFile(self: *Decoder, comptime T: type, path: []const u8) !T {
@@ -40,17 +40,10 @@ pub const Decoder = struct {
         const content = try file.readToEndAlloc(self.allocator, std.math.maxInt(usize));
         defer self.allocator.free(content);
 
-        return try self.decodeFromSlice(T, content);
+        return try self.decode(T, content);
     }
 
-    pub fn decodeAll(self: *Decoder, comptime T: type, reader: anytype) ![]T {
-        const content = try reader.readAllAlloc(self.allocator, std.math.maxInt(usize));
-        defer self.allocator.free(content);
-
-        return try self.decodeAllFromSlice(T, content);
-    }
-
-    pub fn decodeAllFromSlice(self: *Decoder, comptime T: type, source: []const u8) ![]T {
+    pub fn decodeAll(self: *Decoder, comptime T: type, source: []const u8) ![]T {
         var yaml = Yaml{ .source = source };
         defer yaml.deinit(self.allocator);
 
@@ -58,13 +51,20 @@ pub const Decoder = struct {
 
         return try yaml.parse(self.arena.allocator(), []T);
     }
+
+    pub fn decodeAllFromReader(self: *Decoder, comptime T: type, reader: anytype) ![]T {
+        const content = try reader.readAllAlloc(self.allocator, std.math.maxInt(usize));
+        defer self.allocator.free(content);
+
+        return try self.decodeAll(T, content);
+    }
 };
 
 pub fn decode(allocator: Allocator, comptime T: type, source: []const u8) !struct { value: T, arena: std.heap.ArenaAllocator } {
     var decoder = Decoder.init(allocator);
     errdefer decoder.deinit();
 
-    const value = try decoder.decodeFromSlice(T, source);
+    const value = try decoder.decode(T, source);
 
     return .{ .value = value, .arena = decoder.arena };
 }
@@ -82,7 +82,7 @@ pub fn decodeFromReader(allocator: Allocator, comptime T: type, reader: anytype)
     var decoder = Decoder.init(allocator);
     errdefer decoder.deinit();
 
-    const value = try decoder.decode(T, reader);
+    const value = try decoder.decodeFromReader(T, reader);
 
     return .{ .value = value, .arena = decoder.arena };
 }

@@ -21,7 +21,7 @@ test "spec: quoted strings preserve type" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value1", data.str1);
     try std.testing.expectEqualStrings("value2", data.str2);
     try std.testing.expectEqualStrings("text with spaces", data.str3);
@@ -43,7 +43,7 @@ test "spec: strings containing numbers" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("v2.3.4", data.version);
     try std.testing.expectEqualStrings("abc123", data.code);
     try std.testing.expectEqualStrings("ID-456", data.identifier);
@@ -67,7 +67,7 @@ test "spec: strings with special YAML characters" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("key: value", data.colon);
     try std.testing.expectEqualStrings("- item", data.dash);
     try std.testing.expectEqualStrings("[array]", data.bracket);
@@ -90,7 +90,7 @@ test "spec: double-quoted with escape sequences" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("line1\nline2", data.newline);
     try std.testing.expectEqualStrings("col1\tcol2", data.tab);
     try std.testing.expectEqualStrings("say \"hi\"", data.quote);
@@ -106,7 +106,7 @@ test "spec: single-quoted with escaped quotes" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("can't stop won't stop", data.text);
 }
 
@@ -126,7 +126,7 @@ test "spec: plain scalars requiring quotes" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("http://example.com", data.url);
     try std.testing.expectEqualStrings("user@example.com", data.email);
     try std.testing.expectEqualStrings("1.2.3", data.version);
@@ -142,7 +142,7 @@ test "spec: single line plain scalar" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("This is a long description on a single line", data.description);
 }
 
@@ -160,7 +160,7 @@ test "spec: empty quoted strings" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("", data.single);
     try std.testing.expectEqualStrings("", data.double);
 }
@@ -175,7 +175,7 @@ test "spec: strings with only spaces" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("   ", data.spaces);
 }
 
@@ -195,7 +195,7 @@ test "spec: strings starting with special chars" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("@username", data.at_sign);
     try std.testing.expectEqualStrings("`code`", data.backtick);
     try std.testing.expectEqualStrings("%value", data.percent);
@@ -216,7 +216,7 @@ test "spec: long strings without line breaks" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqual(@as(usize, 500), data.long_text.len);
 }
 
@@ -230,7 +230,7 @@ test "spec: strings with trailing spaces preserved" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("value   ", data.text);
 }
 
@@ -244,6 +244,6 @@ test "spec: strings with leading spaces preserved" {
     var decoder = Decoder.init(std.testing.allocator);
     defer decoder.deinit();
 
-    const data = try decoder.decodeFromSlice(Data, yaml);
+    const data = try decoder.decode(Data, yaml);
     try std.testing.expectEqualStrings("   value", data.text);
 }
