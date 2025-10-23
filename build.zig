@@ -21,6 +21,17 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
+    const encoder_tests = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("test/encoder_test.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zyml", .module = mod },
+            },
+        }),
+    });
+
     const fuzz_tests = b.addTest(.{
         .root_module = b.createModule(.{
             .root_source_file = b.path("test/fuzz_test.zig"),
@@ -80,6 +91,7 @@ pub fn build(b: *std.Build) void {
 
     const test_step = b.step("test", "Run all tests");
     test_step.dependOn(&b.addRunArtifact(decoder_tests).step);
+    test_step.dependOn(&b.addRunArtifact(encoder_tests).step);
     test_step.dependOn(&b.addRunArtifact(fuzz_tests).step);
     test_step.dependOn(&b.addRunArtifact(struct_marshal_tests).step);
     test_step.dependOn(&b.addRunArtifact(go_style_tests).step);
@@ -101,6 +113,9 @@ pub fn build(b: *std.Build) void {
 
     const decoder_test_step = b.step("test-decoder", "Run decoder tests");
     decoder_test_step.dependOn(&b.addRunArtifact(decoder_tests).step);
+
+    const encoder_test_step = b.step("test-encoder", "Run encoder tests");
+    encoder_test_step.dependOn(&b.addRunArtifact(encoder_tests).step);
 
     const fuzz_test_step = b.step("test-fuzz", "Run fuzz tests");
     fuzz_test_step.dependOn(&b.addRunArtifact(fuzz_tests).step);

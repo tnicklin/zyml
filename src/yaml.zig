@@ -208,7 +208,8 @@ pub fn toString(self: Yaml, writer: anytype) !void {
     for (self.docs.items, self.tree.?.docs) |doc, node| {
         try writer.writeAll("---");
         if (self.tree.?.directive(node)) |directive| {
-            try writer.print(" !{s}", .{directive});
+            try writer.writeAll(" !");
+            try writer.writeAll(directive);
         }
         try writer.writeByte('\n');
         try doc.toString(writer, .{});
@@ -332,10 +333,18 @@ pub const Value = union(enum) {
     pub fn toString(self: Value, writer: anytype, args: ToStringArgs) ToStringError!void {
         switch (self) {
             .empty => return,
-            .int => |int| return writer.print("{}", .{int}),
-            .float => |float| return writer.print("{d}", .{float}),
-            .string => |string| return writer.print("{s}", .{string}),
-            .boolean => |bool_val| return writer.print("{}", .{bool_val}),
+            .int => |int| {
+                var buffer: [64]u8 = undefined;
+                const str = std.fmt.bufPrint(&buffer, "{d}", .{int}) catch unreachable;
+                return writer.writeAll(str);
+            },
+            .float => |float| {
+                var buffer: [64]u8 = undefined;
+                const str = std.fmt.bufPrint(&buffer, "{d}", .{float}) catch unreachable;
+                return writer.writeAll(str);
+            },
+            .string => |string| return writer.writeAll(string),
+            .boolean => |bool_val| return writer.writeAll(if (bool_val) "true" else "false"),
             .list => |list| {
                 const len = list.len;
                 if (len == 0) return;
@@ -374,7 +383,8 @@ pub const Value = union(enum) {
                     if (!args.should_inline_first_key or i != 0) {
                         try writer.writeByteNTimes(' ', args.indentation);
                     }
-                    try writer.print("{s}: ", .{key});
+                    try writer.writeAll(key);
+                    try writer.writeAll(": ");
 
                     const should_inline = blk: {
                         if (!value.isCompound()) break :blk true;
@@ -575,6 +585,8 @@ pub const Value = union(enum) {
             => return Value{ .int = math.cast(i64, input) orelse return error.Overflow },
 
             .float => return Value{ .float = math.lossyCast(f64, input) },
+
+            .bool => return Value{ .boolean = input },
 
             .@"struct" => |info| if (info.is_tuple) {
                 var list: std.ArrayListUnmanaged(Value) = .empty;

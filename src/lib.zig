@@ -9,11 +9,14 @@ pub const Value = Yaml.Value;
 pub const List = Yaml.List;
 pub const Map = Yaml.Map;
 
-// Decoder API
 pub const Decoder = @import("decoder.zig").Decoder;
 pub const decode = @import("decoder.zig").decode;
 pub const decodeFromFile = @import("decoder.zig").decodeFromFile;
 pub const decodeFromReader = @import("decoder.zig").decodeFromReader;
+
+pub const Encoder = @import("encoder.zig").Encoder;
+pub const encode = @import("encoder.zig").encode;
+pub const encodeToFile = @import("encoder.zig").encodeToFile;
 
 pub fn toString(gpa: std.mem.Allocator, input: anytype, writer: anytype) Yaml.ToStringError!void {
     var arena = std.heap.ArenaAllocator.init(gpa);

@@ -57,6 +57,58 @@ pub fn main() !void {
 }
 ```
 
+## Encoder API
+
+```zig
+const std = @import("std");
+const zyml = @import("zyml");
+
+const Config = struct {
+    name: []const u8,
+    version: []const u8,
+    port: i64,
+    enabled: bool,
+};
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+
+    var encoder = zyml.Encoder.init(gpa.allocator());
+    defer encoder.deinit();
+
+    const config = Config{
+        .name = "my-app",
+        .version = "2.0.0",
+        .port = 8080,
+        .enabled = true,
+    };
+
+    // Encode to string
+    const yaml = try encoder.encode(config);
+    defer gpa.allocator().free(yaml);
+
+    std.debug.print("{s}\n", .{yaml});
+
+    // Or encode directly to file
+    try encoder.encodeToFile("config.yaml", config);
+}
+```
+
+### Roundtrip Example
+
+```zig
+// Decode YAML → Struct
+var decoder = zyml.Decoder.init(allocator);
+defer decoder.deinit();
+const config = try decoder.decodeFromSlice(Config, yaml_string);
+
+// Encode Struct → YAML
+var encoder = zyml.Encoder.init(allocator);
+defer encoder.deinit();
+const yaml = try encoder.encode(config);
+```
+
 ## Low-Level API
 
 ```zig
